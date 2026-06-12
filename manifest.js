@@ -41,7 +41,7 @@ export function mergeManifest(entries, manifest) {
     return { entries, added: 0, enriched: 0 }
   }
 
-  const byUrl = new Map(entries.map((e) => [e.url, e]))
+  const byUrl = new Map(entries.map((e) => [normalizeUrl(e.url), e]))
   let added = 0
   let enriched = 0
 
@@ -49,7 +49,7 @@ export function mergeManifest(entries, manifest) {
     if (!page || !page.url) continue
     const faqItems = Array.isArray(page.faqItems) ? page.faqItems : []
     const regions = Array.isArray(page.regions) ? page.regions : []
-    const existing = byUrl.get(page.url)
+    const existing = byUrl.get(normalizeUrl(page.url))
 
     if (existing) {
       let touched = false
@@ -60,7 +60,7 @@ export function mergeManifest(entries, manifest) {
     } else {
       const entry = normalizePage(page, faqItems, regions)
       entries.push(entry)
-      byUrl.set(entry.url, entry)
+      byUrl.set(normalizeUrl(entry.url), entry)
       added++
     }
   }
@@ -69,6 +69,19 @@ export function mergeManifest(entries, manifest) {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Canonical form for URL matching: the scanner derives urls from file paths
+ * ("/pricing") while the manifest carries the app's route strings, which may
+ * differ by a trailing slash ("/pricing/") or missing leading slash. Without
+ * normalization those would duplicate a page instead of enriching it.
+ */
+function normalizeUrl(url) {
+  let u = String(url).trim()
+  if (!u.startsWith('/')) u = '/' + u
+  if (u.length > 1) u = u.replace(/\/+$/, '')
+  return u
+}
 
 function normalizePage(page, faqItems, regions) {
   return {

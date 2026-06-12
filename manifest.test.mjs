@@ -64,6 +64,31 @@ ok('manifest-only page content in llms-full', out.includes('**Q: Where are the d
 ok('dynamic region text in llms-full', out.includes('Pro adds unlimited projects and priority support.'))
 ok('partial region text NOT present', !/\*\*Summary:\*\* Pro adds$/m.test(out))
 
+// URL normalization: a manifest url differing only by a trailing slash (or a
+// missing leading slash) must enrich the scanned page, not duplicate it.
+{
+  const scanned = [{
+    filePath: 'src/pricing.jsx', url: '/pricing', title: 'Pricing',
+    description: '', priority: 'high', regions: [],
+    schemaType: 'FAQPage', faqItems: [], faqUnresolved: true,
+  }]
+  const slashManifest = {
+    version: 1,
+    pages: [{
+      url: '/pricing/',
+      faqItems: [{ question: 'Trailing slash?', answer: 'Still matches.' }],
+      schemas: [],
+    }],
+  }
+  const r = mergeManifest(scanned, slashManifest)
+  ok('trailing-slash url enriches instead of duplicating', r.enriched === 1 && r.added === 0,
+    `enriched=${r.enriched} added=${r.added}`)
+  ok('no duplicate page appended', scanned.length === 1, `entries=${scanned.length}`)
+
+  const r2 = mergeManifest(scanned, { version: 1, pages: [{ url: 'pricing', description: 'No leading slash' }] })
+  ok('missing leading slash still matches', r2.added === 0 && scanned.length === 1)
+}
+
 // loadManifest from disk: present, malformed, absent.
 const dir = mkdtempSync(join(tmpdir(), 'rah-man-'))
 writeFileSync(join(dir, 'react-ai-helmet.manifest.json'), JSON.stringify(manifest))

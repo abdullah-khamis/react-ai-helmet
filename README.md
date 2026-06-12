@@ -114,6 +114,9 @@ static text with a dynamic expression doesn't appear twice, partial and full).
 
 ```js
 // scripts/collect.mjs — run as part of your build, before `react-ai-helmet generate`
+// (plain node script — createElement instead of JSX, since node doesn't compile
+// JSX; inside an SSG build step that already compiles JSX, use JSX directly)
+import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { writeFileSync } from 'node:fs'
 import { createManifest } from 'react-ai-helmet/collect'
@@ -121,7 +124,7 @@ import { createManifest } from 'react-ai-helmet/collect'
 const renders = routes.map((route) => ({
   url: route.path,
   title: route.title,
-  html: renderToStaticMarkup(<App url={route.path} />),
+  html: renderToStaticMarkup(createElement(App, { url: route.path })),
 }))
 writeFileSync('react-ai-helmet.manifest.json', JSON.stringify(createManifest(renders), null, 2))
 ```

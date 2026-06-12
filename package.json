@@ -2,21 +2,43 @@
   "name": "react-ai-helmet",
   "version": "0.1.0",
   "description": "AI readability toolkit for React — schema components, AI region hints, and a CLI that generates llms.txt, llms-full.txt and robots.txt.",
+  "author": "Abdullah Khamis",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdullah-khamis/react-ai-helmet.git"
+  },
+  "homepage": "https://github.com/abdullah-khamis/react-ai-helmet#readme",
+  "bugs": {
+    "url": "https://github.com/abdullah-khamis/react-ai-helmet/issues"
+  },
   "type": "module",
+  "sideEffects": false,
   "bin": {
     "react-ai-helmet": "./index.js"
   },
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./collect": {
-      "types": "./dist/collect.d.ts",
-      "import": "./dist/collect.js"
+      "import": {
+        "types": "./dist/collect.d.ts",
+        "default": "./dist/collect.js"
+      },
+      "require": {
+        "types": "./dist/collect.d.cts",
+        "default": "./dist/collect.cjs"
+      }
     }
   },
   "files": [

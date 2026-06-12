@@ -79,7 +79,9 @@ function walkDir(dir, extensions, ignore, rootReal, visited, verbose, callback) 
   }
 
   for (const item of items) {
-    if (ignore.some((ig) => item === ig || item.startsWith('.'))) continue
+    // Dotfiles/dirs are always skipped, independent of the configured ignore list.
+    if (item.startsWith('.')) continue
+    if (ignore.includes(item)) continue
     const fullPath = join(dir, item)
 
     // lstat does NOT follow symlinks, so we can detect them.
@@ -219,6 +221,12 @@ function extractMetadata(source, filePath, root) {
  * Extract string props from a JSX component usage.
  * Handles: prop="value"  prop={'value'}  prop={`value`}
  * Returns null if component not found.
+ *
+ * Known limits of the regex approach (each fails soft — props are skipped, not
+ * misread): only the FIRST usage of a component per file is read (these are
+ * page-level components, so one per file is the expected shape), and the open
+ * tag is delimited by `[^>]*`, so a prop whose value contains `>` (e.g. an
+ * inline arrow function) truncates the prop list at that point.
  */
 function extractJSXProps(source, componentName) {
   // Match <ComponentName ... > or <ComponentName ... />
@@ -334,10 +342,19 @@ function filePathToTitle(relPath) {
 }
 
 function inferPriority(relPath) {
-  const p = relPath.toLowerCase()
-  if (p.includes('index') || p === 'app/page' || p === 'pages/index') return 'high'
-  if (p.includes('pricing') || p.includes('docs') || p.includes('about')) return 'high'
-  if (p.includes('blog') || p.includes('feature')) return 'medium'
+  // Match whole path segments / file names, so e.g. components/IndexCard.tsx
+  // doesn't rank as the index page.
+  const segments = relPath
+    .toLowerCase()
+    .replace(/\\/g, '/')
+    .replace(/\.(jsx?|tsx?)$/, '')
+    .split('/')
+  if (segments[0] === 'src') segments.shift()
+  const has = (...names) => names.some((name) => segments.includes(name))
+  // app/page.tsx is the root route; nested app-router pages rank by their own segment.
+  if (has('index', 'home') || segments.join('/') === 'app/page') return 'high'
+  if (has('pricing', 'docs', 'documentation', 'about')) return 'high'
+  if (has('blog', 'posts', 'features', 'feature')) return 'medium'
   return 'low'
 }
 
