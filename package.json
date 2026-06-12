@@ -1,0 +1,69 @@
+{
+  "name": "react-ai-helmet",
+  "version": "0.1.0",
+  "description": "AI readability toolkit for React — schema components, AI region hints, and a CLI that generates llms.txt, llms-full.txt and robots.txt.",
+  "type": "module",
+  "bin": {
+    "react-ai-helmet": "./index.js"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./collect": {
+      "types": "./dist/collect.d.ts",
+      "import": "./dist/collect.js"
+    }
+  },
+  "files": [
+    "dist",
+    "commands",
+    "index.js",
+    "logger.js",
+    "config.js",
+    "scanner.js",
+    "manifest.js",
+    "llms-generator.js",
+    "robots-generator.js",
+    "sitemap-generator.js"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "pretest": "npm run build",
+    "test": "node run-tests.mjs",
+    "example:build": "tsup example/src/routes.jsx --no-config --format esm --out-dir example/build --external react --external react-ai-helmet",
+    "example": "npm run build && npm run example:build && node example/scripts/collect.mjs && node example/scripts/demo.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "react",
+    "llms.txt",
+    "ai",
+    "aeo",
+    "schema",
+    "json-ld",
+    "seo",
+    "robots.txt"
+  ],
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.2.7",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
