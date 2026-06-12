@@ -42,7 +42,25 @@ import { AIHelmet } from 'react-ai-helmet'
 ```
 
 `allowBots` / `denyBots` are declarative hints the CLI reads to build
-`robots.txt`; they have no runtime meta equivalent and render nothing.
+`robots.txt` (an explicit deny wins over an allow); they have no runtime meta
+equivalent and render nothing. When present they take precedence over the
+`robots` section of the config file.
+
+### `<AIPage>` — per-page llms.txt hints
+
+Renders nothing; the CLI scanner reads its props. Use `url` when your routes
+don't follow file-based conventions (React Router, custom routing) — without
+it the URL is inferred from the file path.
+
+```jsx
+import { AIPage } from 'react-ai-helmet'
+
+<AIPage title="Pricing" description="Plans and pricing" priority="high" url="/pricing" />
+```
+
+(The `llmsTitle` / `llmsDescription` / `llmsPriority` / `llmsUrl` props on
+`<AIHelmet>` do the same and remain supported; `<AIPage>` keeps site-level and
+page-level concerns separate.)
 
 ### Schema components
 
@@ -65,6 +83,23 @@ import { ArticleSchema, ProductSchema, FAQSchema, OrgSchema, EventSchema } from 
 
 `ArticleSchema` and `OrgSchema` inherit `siteName`/`siteUrl` from `<AIHelmet>`
 when those props are omitted.
+
+Need a type without a dedicated component? `<JsonLd>` emits any object as a
+JSON-LD block (same pruning and `</script>`-breakout escaping):
+
+```jsx
+import { JsonLd } from 'react-ai-helmet'
+
+<JsonLd data={{
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Home', item: 'https://acme.com' }],
+}} />
+```
+
+The static scanner can't read arbitrary `data` objects, but the collection pass
+below captures every JSON-LD block from rendered HTML — so custom schemas still
+reach the manifest.
 
 ### `<AIRegion>` — extraction hints
 

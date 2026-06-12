@@ -2,12 +2,14 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import {
   AIHelmet,
+  AIPage,
   ArticleSchema,
   ProductSchema,
   FAQSchema,
   OrgSchema,
   EventSchema,
   AIRegion,
+  JsonLd,
 } from './dist/index.js'
 
 const h = React.createElement
@@ -125,6 +127,44 @@ if (bare.includes('offers') || bare.includes('aggregateRating') || bare.includes
 } else {
   pass++
   console.log('✓ Pruning leaves no offers/rating/undefined for bare product')
+}
+
+// AIPage — pure scanner hint, must render nothing.
+const aiPage = renderToStaticMarkup(
+  h(AIPage, { title: 'Pricing', description: 'Plans', priority: 'high', url: '/pricing' }),
+)
+if (aiPage === '') {
+  pass++
+  console.log('✓ AIPage renders nothing')
+} else {
+  fail++
+  console.log(`✗ AIPage rendered output: ${aiPage}`)
+}
+
+// JsonLd — public escape hatch for arbitrary schema types, with pruning and
+// </script> breakout protection.
+check(
+  'JsonLd (arbitrary schema type)',
+  renderToStaticMarkup(
+    h(JsonLd, {
+      data: {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Home', empty: '' }],
+      },
+    }),
+  ),
+  'application/ld+json',
+  '"@type":"BreadcrumbList"',
+  '"position":1',
+)
+const breakout = renderToStaticMarkup(h(JsonLd, { data: { '@type': 'Thing', name: '</script><b>' } }))
+if (breakout.includes('</script><b>')) {
+  fail++
+  console.log(`✗ JsonLd script breakout not escaped: ${breakout}`)
+} else {
+  pass++
+  console.log('✓ JsonLd escapes </script> breakout')
 }
 
 console.log(`\n${pass} passed, ${fail} failed`)

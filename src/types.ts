@@ -24,6 +24,9 @@ export interface RatingInput {
   count: number | string
 }
 
+/** Page weight in llms.txt — controls ordering within its category. */
+export type LlmsPriority = 'high' | 'medium' | 'low'
+
 /** Region intent understood by AI crawlers and the llms-full.txt generator. */
 export type AIRegionType = 'answer' | 'summary' | 'definition' | 'general'
 

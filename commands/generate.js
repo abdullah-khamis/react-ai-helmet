@@ -44,6 +44,15 @@ export async function generate(flags = {}) {
 
   logger.success(`Found ${entries.length} page${entries.length !== 1 ? 's' : ''} with AI metadata`)
 
+  // Per-bot lists declared on <AIHelmet allowBots={...} denyBots={...}> take
+  // precedence over the config file — the JSX is the closer-to-code declaration.
+  const botSource = entries.find((e) => e.allowBots || e.denyBots)
+  if (botSource) {
+    if (botSource.allowBots) config.robots.allowBots = botSource.allowBots
+    if (botSource.denyBots)  config.robots.denyBots  = botSource.denyBots
+    logger.info(`Using bot lists from <AIHelmet> in ${botSource.filePath}`)
+  }
+
   if (config.verbose) {
     for (const entry of entries) {
       logger.dim(`${entry.priority.padEnd(6)} ${entry.url.padEnd(30)} ${entry.title}`)

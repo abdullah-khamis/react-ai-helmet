@@ -41,9 +41,18 @@ export function buildRobotsTxt(config, outDir) {
     existing = stripManagedBlock(existing)
   }
 
-  const { allowBots, disallowPaths } = config.robots
+  const { disallowPaths } = config.robots
+  const explicitDeny = config.robots.denyBots || []
 
-  const denyBots = KNOWN_AI_BOTS.filter((bot) => !allowBots.includes(bot))
+  // An explicit deny wins over an allow; denied bots that aren't in the known
+  // list still get a Disallow block.
+  const allowBots = config.robots.allowBots.filter((bot) => !explicitDeny.includes(bot))
+  const denyBots = [
+    ...new Set([
+      ...KNOWN_AI_BOTS.filter((bot) => !allowBots.includes(bot)),
+      ...explicitDeny,
+    ]),
+  ]
 
   const lines = []
 

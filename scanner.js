@@ -132,6 +132,7 @@ function isInside(parent, child) {
 function hasAIHelmetUsage(source) {
   return (
     source.includes('AIHelmet') ||
+    source.includes('AIPage') ||
     source.includes('AIRegion') ||
     source.includes('ArticleSchema') ||
     source.includes('ProductSchema') ||
@@ -150,7 +151,8 @@ function hasAIHelmetUsage(source) {
 function extractMetadata(source, filePath, root) {
   const relPath = relative(root, filePath)
 
-  // --- AIHelmet props ---
+  // --- AIPage props (preferred page-level hints) and AIHelmet props ---
+  const pageBlock   = extractJSXProps(source, 'AIPage')
   const helmetBlock = extractJSXProps(source, 'AIHelmet')
 
   // --- Schema components ---
@@ -163,26 +165,35 @@ function extractMetadata(source, filePath, root) {
   // Merge: schema props can supply title/description if AIHelmet doesn't
   const schemaProps = articleProps || productProps || faqProps || orgProps || eventProps || {}
 
-  // Title: from llmsTitle, headline, name, or filename
+  // Title: from AIPage, llmsTitle, headline, name, or filename
   const title =
+    pageBlock?.title ||
     helmetBlock?.llmsTitle ||
     schemaProps?.headline ||
     schemaProps?.name ||
     filePathToTitle(relPath)
 
-  // Description: from llmsDescription or schema description
+  // Description: from AIPage, llmsDescription, or schema description
   const description =
+    pageBlock?.description ||
     helmetBlock?.llmsDescription ||
     schemaProps?.description ||
     ''
 
   // Priority: explicit or inferred from path
   const priority =
+    pageBlock?.priority ||
     helmetBlock?.llmsPriority ||
     inferPriority(relPath)
 
-  // Infer URL from file path
-  const url = filePathToUrl(relPath)
+  // URL: explicit override (apps without file-based routing), else inferred
+  // from the file path.
+  const explicitUrl = pageBlock?.url || helmetBlock?.llmsUrl
+  const url = explicitUrl ? normalizeExplicitUrl(explicitUrl) : filePathToUrl(relPath)
+
+  // --- Per-bot robots.txt lists declared on <AIHelmet> ---
+  const allowBots = extractStringArrayProp(source, 'AIHelmet', 'allowBots')
+  const denyBots  = extractStringArrayProp(source, 'AIHelmet', 'denyBots')
 
   // --- AIRegion extraction ---
   const regions = extractRegions(source)
@@ -212,6 +223,8 @@ function extractMetadata(source, filePath, root) {
     schemaType,
     faqItems: faq.items,
     faqUnresolved: faq.unresolved,
+    allowBots,
+    denyBots,
   }
 }
 
@@ -305,7 +318,67 @@ function stripJSX(html) {
     .trim()
 }
 
+// ─── Array prop extraction ───────────────────────────────────────────────────
+
+/**
+ * Read an array-of-strings prop (e.g. allowBots={['GPTBot', 'ClaudeBot']}) from
+ * the FIRST usage of a component. The search is bounded to that component's
+ * open tag so a same-named prop on a later component can't leak in. Returns
+ * undefined when the component or prop is absent, or the value isn't an inline
+ * array literal.
+ */
+function extractStringArrayProp(source, componentName, propName) {
+  const tagIdx = source.indexOf(`<${componentName}`)
+  if (tagIdx === -1) return undefined
+  const tagEnd = findOpenTagEnd(source, tagIdx)
+
+  const re = new RegExp(`\\b${propName}\\s*=\\s*\\{`, 'g')
+  re.lastIndex = tagIdx
+  const m = re.exec(source)
+  if (!m || m.index >= tagEnd) return undefined
+
+  const expr = matchBraces(source, m.index + m[0].length - 1)
+  if (expr == null || !expr.trim().startsWith('[')) return undefined
+
+  const values = []
+  const strRe = /(['"`])((?:\\.|(?!\1).)*)\1/g
+  let s
+  while ((s = strRe.exec(expr)) !== null) values.push(unescapeString(s[2]))
+  return values
+}
+
+/**
+ * Index just past the '>' that closes the open tag starting at `tagIdx`,
+ * skipping '>' characters inside string literals and {...} expressions.
+ */
+function findOpenTagEnd(source, tagIdx) {
+  let quote = null
+  let depth = 0
+  for (let i = tagIdx; i < source.length; i++) {
+    const c = source[i]
+    if (quote) {
+      if (c === '\\') { i++; continue }
+      if (c === quote) quote = null
+      continue
+    }
+    if (c === '"' || c === "'" || c === '`') { quote = c; continue }
+    if (c === '{') depth++
+    else if (c === '}') depth--
+    else if (c === '>' && depth === 0) return i + 1
+  }
+  return source.length
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Canonicalize a user-supplied page URL: leading slash, no trailing slash. */
+function normalizeExplicitUrl(url) {
+  let u = String(url).trim()
+  if (u.startsWith('http')) return u // absolute URLs pass through untouched
+  if (!u.startsWith('/')) u = '/' + u
+  if (u.length > 1) u = u.replace(/\/+$/, '')
+  return u
+}
 
 /**
  * Convert a source file path to a likely URL path.

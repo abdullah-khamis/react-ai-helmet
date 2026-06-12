@@ -1,7 +1,7 @@
 import React from 'react'
 import { AIContext } from './context.js'
 import { MetaTag } from './MetaTag.js'
-import type { BotName } from './types.js'
+import type { BotName, LlmsPriority } from './types.js'
 
 export interface AIHelmetProps {
   siteName?: string
@@ -13,12 +13,14 @@ export interface AIHelmetProps {
   allowBots?: BotName[]
   /** Read statically by the CLI to build robots.txt. No runtime effect. */
   denyBots?: BotName[]
-  /** Page-level llms.txt hint, consumed by the CLI scanner. No runtime effect. */
+  /** Page-level llms.txt hint, consumed by the CLI scanner. No runtime effect. Prefer <AIPage>. */
   llmsTitle?: string
-  /** Page-level llms.txt hint, consumed by the CLI scanner. No runtime effect. */
+  /** Page-level llms.txt hint, consumed by the CLI scanner. No runtime effect. Prefer <AIPage>. */
   llmsDescription?: string
-  /** Page-level llms.txt hint, consumed by the CLI scanner. No runtime effect. */
-  llmsPriority?: 'high' | 'medium' | 'low'
+  /** Page-level llms.txt hint, consumed by the CLI scanner. No runtime effect. Prefer <AIPage>. */
+  llmsPriority?: LlmsPriority
+  /** Page URL override for the scanner. No runtime effect. Prefer <AIPage url>. */
+  llmsUrl?: string
   children?: React.ReactNode
 }
 

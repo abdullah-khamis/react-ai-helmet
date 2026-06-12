@@ -5,8 +5,18 @@
 export { AIHelmet } from './AIHelmet.js'
 export type { AIHelmetProps } from './AIHelmet.js'
 
+export { AIPage } from './AIPage.js'
+export type { AIPageProps } from './AIPage.js'
+
 export { AIRegion } from './AIRegion.js'
 export type { AIRegionProps } from './AIRegion.js'
+
+// Escape hatch: emit any schema.org type as JSON-LD. The static scanner doesn't
+// read arbitrary data, but the collection pass (react-ai-helmet/collect) captures
+// every JSON-LD block from rendered HTML, so custom schemas flow into the
+// manifest and llms generation automatically.
+export { JsonLd } from './JsonLd.js'
+export type { JsonLdProps } from './JsonLd.js'
 
 export { useAIContext, AIContext } from './context.js'
 export type { AIContextValue } from './context.js'
@@ -32,5 +42,6 @@ export type {
   FAQItem,
   RatingInput,
   AIRegionType,
+  LlmsPriority,
   BotName,
 } from './types.js'
